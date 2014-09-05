@@ -1,0 +1,18 @@
+{
+  "manifest_version": 2,
+
+  "name": "Vk.com audio streamer",
+  "description": "Vk.com audio streamer",
+  "version": "0.0",
+
+  "permissions": [
+    "tabs", 
+    "https://vk.com/"
+  ],
+  "content_scripts": [
+    {
+      "matches": [ "http://vk.com/*", "https://vk.com/*" ],
+      "js": ["main.js"]
+    }
+  ]
+}

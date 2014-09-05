@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script src="http://code.jquery.com/jquery-1.8.3.js" type="text/javascript"></script>
+	<!-- <script src="http://127.0.0.1:8081/broadcasters.js" type="text/javascript"></script> -->
+	<script src="/socket.io/socket.io.js" type="text/javascript"></script>	
+	<script src="main.js" type="text/javascript"></script>	
+	<link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+	<script>
+
+		//* HTML5 PLayer Class
+
+		html5Player = function() {
+		  
+		  var source = null;
+		  var audio = document.createElement('audio');
+
+		  this.getSource = function() {
+		    return source;
+		  }
+		  this.load = function(src, position) {
+		    source = src;
+		    position = position || 0.0;
+		    audio.setAttribute("src", src);
+		    audio.addEventListener('loadedmetadata', function(){
+		        audio.currentTime = position * audio.duration;
+		        audio.removeEventListener('loadedmetadata');
+		    });
+		  };
+		  this.play = function(src) {
+		    audio.play();
+		  };
+		  
+		  this.pause = function() {
+		    if (source) {
+		      audio.pause();
+		    }
+		  };
+		  this.volume = function(percents) {
+		    audio.volume = percents;
+		  };
+		  this.rewind = function(percents) {
+		    audio.currentTime = percents * audio.duration;
+		  };
+		};
+
+		//* Listener Class
+
+		var  Listener = function() {
+		  var url = null;
+		  var socket;
+		  lEvents = [];
+
+		  var closeSocket = function() {
+		    if (socket) {
+		      oldSocket = socket;
+		      socket = null;
+		      oldSocket.disconnect();
+		    }    
+		  };
+
+		  this.stop = function() {
+		    closeSocket();
+		  } 
+
+		  this.connect = function (bid, uid) {
+		    closeSocket();
+		    socket = io.connect(url, {'forceNew': true });
+		    socket.on('connect', function () { 
+		      socket.emit('listen', {'uid': uid, 'bid': bid});
+		    });
+
+		    socket.on('send', function (obj) {
+		      if (lEvents[obj.name]) {
+		        lEvents[obj.name](obj.data);
+		      }
+		    }); 
+		  };
+
+		  this.send = function (name, data) {
+		    var obj = {
+		      type: 'l',
+		      name: name,      
+		      data: data,
+		    };
+		    socket.emit('send', obj);
+		  }
+
+		  this.on = function (name, callback) {
+		    lEvents[name] = callback;
+		  }
+		}
+
+		var listener = new Listener();
+		var Player = new html5Player();
+
+		function Listen(uid) {
+		  var myId = Math.round(Math.random() * 1000000);
+		  listener.connect(uid, myId);
+		  listener.send('get_status');
+		  listener.on('status', function(status) {
+		    listener.on('status', null);
+		    console.log(status);
+		    if (status.played) {
+		      Player.load(status.src, status.time);
+		      Player.play();
+		    }
+		  });
+		    
+		  listener.on('change', function(src) {
+		    Player.load(src);
+		    Player.play();
+		  });
+		    
+		  listener.on('play', function() {
+		    Player.play();
+		  });
+
+		  listener.on('pause', function() {
+		    Player.pause();
+		  });
+
+		  listener.on('rewind', function(pos) {
+		    Player.rewind(pos);
+		  });    
+		}
+
+		//* Init 
+		broadcasters = ['32587609', '87274210'];
+
+        function play(uid) {
+        	Listen(uid);
+        }
+
+		$(document).ready(function() {          
+		    $.each(broadcasters, function(key, val) {
+		        $('body').append('<div id="' + val + '" onclick="play(this.id)" class="bc-flat">' + val + '</div>');
+		    });
+		});
+	</script>	
+</body>
+</html>

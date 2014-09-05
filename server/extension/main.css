@@ -1,0 +1,29 @@
+.radio {
+    position: fixed;
+    top: 20px;
+    right: 100px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%; 
+    cursor: pointer;
+}
+
+.ready {
+    width: 12px;
+    height: 12px;
+    background-color: rgb(0, 218, 0);
+}
+
+.bcast {
+    background-color: red;
+
+    -webkit-animation-name: pulsate;
+    -webkit-animation-duration: 1.3s;
+    -webkit-animation-timing-function: ease-in-out;
+    -webkit-animation-iteration-count: infinite     
+}
+@-webkit-keyframes pulsate {
+    0% {-webkit-transform: scale(0.8, 0.8); opacity: 1;}
+    50% {opacity: 0.7;}
+    100% {-webkit-transform: scale(1.1, 1.1); opacity: 0.3;}
+}
