@@ -98,7 +98,7 @@ vkPlayer = function() {
 
 var  Broadcaster = function() {
 
-  var url = 'http://localhost:8081';
+  var url = 'http://92.63.109.20:8081';
   var socket;
   var bEvents = [];
 
