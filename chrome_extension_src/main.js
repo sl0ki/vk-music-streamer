@@ -16,7 +16,7 @@ var injectCssFile = function(filename) {
 	oHead.appendChild(oLink);
 };
 
-var host = 'http://localhost:8081';
+var host = 'http://92.63.109.20:8081';
 
 injectCssFile(host + '/extension/main.css');
 
