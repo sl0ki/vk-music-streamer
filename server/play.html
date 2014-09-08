@@ -5,9 +5,10 @@
 	<title>Document</title>
 	<script src="http://code.jquery.com/jquery-1.8.3.js" type="text/javascript"></script>
 	<!-- <script src="http://127.0.0.1:8081/broadcasters.js" type="text/javascript"></script> -->
-	<script src="/socket.io/socket.io.js" type="text/javascript"></script>	
+	<script src="http://92.63.109.20:8081/socket.io/socket.io.js" type="text/javascript"></script>	
+	<!-- 
 	<script src="main.js" type="text/javascript"></script>	
-	<link rel="stylesheet" type="text/css" href="main.css">
+	<link rel="stylesheet" type="text/css" href="main.css"> -->
 </head>
 <body>
 	<script>
@@ -15,7 +16,7 @@
 		//* HTML5 PLayer Class
 
 		html5Player = function() {
-		  
+		 
 		  var source = null;
 		  var audio = document.createElement('audio');
 
@@ -53,12 +54,12 @@
 		var  Listener = function() {
 		  var url = 'http://92.63.109.20:8081';
 		  var socket;
-		  lEvents = [];
+		  var lEvents = [];
 
 		  var closeSocket = function() {
 		    if (socket) {
 		      oldSocket = socket;
-		      socket = null;
+		      delete socket;
 		      oldSocket.disconnect();
 		    }    
 		  };
@@ -67,12 +68,31 @@
 		    closeSocket();
 		  } 
 
-		  this.connect = function (bid, uid) {
+		  this.connect = function (bid) {
 		    closeSocket();
+		    var uid = Math.round(Math.random() * 1000000);
 		    socket = io.connect(url, {'forceNew': true });
-		    socket.on('connect', function () { 
+
+		    socket.on('connect', function () {
 		      socket.emit('listen', {'uid': uid, 'bid': bid});
+		      console.log('connect');	
+		      if (lEvents['connect']) return lEvents['connect']();		      
 		    });
+
+		    socket.on("disconnect", function() {
+		    	console.log('disconnect');	
+		    	if (lEvents['disconnect']) return lEvents['disconnect']();
+		    });	
+
+		    socket.on('start', function() {
+		    	console.log('start');	
+		      if (lEvents['start']) return lEvents['start']();	    	
+		    })	    
+
+		    socket.on('stop', function() {
+		    	console.log('stop');	
+		      if (lEvents['stop']) return lEvents['stop']();	    	
+		    })	
 
 		    socket.on('send', function (obj) {
 		      if (lEvents[obj.name]) {
@@ -93,23 +113,32 @@
 		  this.on = function (name, callback) {
 		    lEvents[name] = callback;
 		  }
+
+		  var that = this;
 		}
+
+		/******************************************/
 
 		var listener = new Listener();
 		var Player = new html5Player();
 
 		function Listen(uid) {
-		  var myId = Math.round(Math.random() * 1000000);
-		  listener.connect(uid, myId);
-		  listener.send('get_status');
-		  listener.on('status', function(status) {
-		    listener.on('status', null);
-		    console.log(status);
-		    if (status.played) {
-		      Player.load(status.src, status.time);
-		      Player.play();
-		    }
-		  });
+
+		  listener.connect(uid);
+
+		  listener.on('start', function(pos) {
+			  listener.send('get_status');
+			  listener.on('status', function(status) {
+			    listener.on('status', null);
+			    console.log(status);
+			    if (status.src) {
+			      Player.load(status.src, status.time);			    	
+				    if (status.played) {
+				      Player.play();
+				    }			      
+			    }
+			  });		    
+		  }); 
 		    
 		  listener.on('change', function(src) {
 		    Player.load(src);
@@ -126,7 +155,11 @@
 
 		  listener.on('rewind', function(pos) {
 		    Player.rewind(pos);
-		  });    
+		  });     
+
+		  listener.on('disconnect', function(pos) {
+		    Player.pause();
+		  }); 		  
 		}
 
 		//* Init 

@@ -38,23 +38,37 @@ io.on('connection', function (socket) {
   //* On Broadcater connect
   socket.on('broadcast', function(uid){
     socket.uid = uid;
-    socket.type = 'broadcast';
+    socket.type = 'b';
+
+    //* If broadcaster exist, disconect all clients (they try connect to new broadcasters)
+    if (broadcasters[uid]) {
+        broadcasters[uid].listeners.forEach(function(listener) {
+        listener.socket.disconnect();
+        delete broadcasters[uid].listeners;
+      });      
+    }
+    //* Init new broadcaster
     broadcasters[uid] = { 
       socket: socket,
       listeners: [],
     };
+    socket.emit('start');
     console.log('New Broadcaster: ' + uid);
   });
 
   //* On Listener connect
   socket.on('listen', function(data) {
-    if (!broadcasters[data.bid]) return;
+    if (!broadcasters[data.bid]) {
+      socket.disconnect();
+      return ;
+    }
     socket.uid = data.uid;
-    socket.type = 'listen';
+    socket.type = 'l';
     broadcasters[data.bid].listeners[data.uid] = {
       socket: socket
     };
-    broadcasters[data.bid].socket.emit('give_status');
+    //broadcasters[data.bid].socket.emit('get_status');
+    socket.emit('start');
     console.log('New Listener: ' + data.uid);
   });
 
@@ -79,17 +93,14 @@ io.on('connection', function (socket) {
   //* On Someone Disconect
   socket.on('disconnect', function () {
     console.log('Disconect - ' + socket.uid);
-    if (socket.type == 'broadcast') {
-      broadcasters[socket.uid].listeners.forEach(function(listner) {
-        //* If Broadcaster disconecr send pause signal to all listeners
-        listner.socket.emit('send', {
-          type: 'b',
-          name: 'pause',
-        });
+    if (socket.type == 'b') {
+      //* If Broadcaster disconected, disconect all listeners
+      broadcasters[socket.uid].listeners.forEach(function(listener) {
+        listener.socket.disconnect();
       });
       // TODO delete user
     }
-    if (socket.type == 'listen') {
+    if (socket.type == 'l') {
       // TODO Find and delete       
     }    
   });
