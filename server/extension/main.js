@@ -16,38 +16,29 @@ lStorage = {
 vkPlayer = function() {
 
   var played = false;
-  var source = null;
-
-  var playCallback = null;
-  var pauseCallback = null;
-  var rewindCallback = null;
-  var changeSourceCallback = null;
+  var audioId = null;
+  var events = [];
 
   this.initHooks = function() {
-
     console.log('Init Player Hooks!');
 
     /* play - pause hooks*/
     audioPlayer.operate_  =  audioPlayer.operate;
     audioPlayer.operate = function(a1, a2, a3) {
+      var oldAudioId = audioId;
+      audioId = a1;
       if (a1 == currentAudioId() && audioPlayer.player.paused() == false) { 
         played = false;
-        if (pauseCallback != null) {
-          pauseCallback();
-        }
+        event('pause');
         return audioPlayer.operate_(a1, a2, a3);
       }
       played = true;
-      var src = audioPlayer.getSongInfoFromDOM(a1)[2];
       // Change src callback
-      if (src != source) {
-        source = src;
-        if (changeSourceCallback) {
-          changeSourceCallback(source);
-        }
-      }
-      if (playCallback) {
-        playCallback();
+      if (oldAudioId != a1) {
+        audioPlayer.curTime = 0;
+        event('load');
+      } else {
+        event('play');
       }
       return audioPlayer.operate_(a1, a2, a3);
     };
@@ -57,41 +48,49 @@ vkPlayer = function() {
     audioPlayer.getPrPos = function(a1, a2) {
       var res = audioPlayer.getPrPos_(a1, a2);
       if (a1.type == 'mousedown') {
-        if (rewindCallback) {
-          rewindCallback(Math.round(res * 100) / 10000);
-        } 
+        // Calculate new current time
+        audioPlayer.curTime = Math.round(audioPlayer.duration * res / 100);
+        event('rewind');
       };
       return res;
     };
+    if (audioPlayer.id) {
+      audioId = audioPlayer.id;
+      played = true;
+      event('load');
+    }
   };
 
-  this.getPosition = function() {
-    return (Math.round(audioPlayer.curTime / audioPlayer.duration * 10000)) / 10000;
-  }
-  this.onPlay = function(callback) {
-    playCallback = callback;
+  this.on = function(name, callback) {
+    events[name] = callback;
   };
-  this.onPause = function(callback) {
-    pauseCallback = callback;
-  };
-  this.onRewind = function(callback) {
-    rewindCallback = callback;
-  };
-  this.onChangeSrc = function(callback) {
-    changeSourceCallback = callback;
-  };
-  this.getSource = function() {
-    return source;
-  };
-  this.getStatus = function() {
+
+  var getStatus = function() {
+    var song = audioPlaylist[audioId];
     var status = {
-      time: (Math.round(audioPlayer.curTime / audioPlayer.duration * 10000)) / 10000,
-      src: source,
+      duration: song[3],
+      source: song[2],
+      time: audioPlayer.curTime,
       played: played,
-      // TODO Add Song Name
+      artist: song[5],
+      name: song[6],
     }
     return status;
-  }
+  };
+
+  function event(name) {
+    console.log('e1');
+    if (!events[name]) return;
+    if (typeof(audioPlaylist) != 'undefined') if (audioPlaylist[audioId]) {
+      console.log('e2');
+      return events[name](getStatus());      
+    } 
+    setTimeout(function() {
+      console.log('e3');
+      events[name](getStatus());      
+    }, 1000);
+  };
+
 }
 
 //* Broadcaster Class
@@ -101,9 +100,9 @@ var  Broadcaster = function() {
   var url = 'http://92.63.109.20:8081';
   var socket;
   var bEvents = [];
+  var connected = false;
 
   var closeSocket = function() {
-    type = null;
     if (socket) {
       oldSocket = socket;
       socket = null;
@@ -118,24 +117,24 @@ var  Broadcaster = function() {
   this.connect = function (uid) {
     closeSocket();
     socket = io.connect(url, {'forceNew': true });
+
     socket.on('connect', function () { 
+      connected = true;
       socket.emit('broadcast', uid); 
     });
 
-    socket.on('send', function (obj) {
-      if (bEvents[obj.name]) {
-        bEvents[obj.name](obj.data);
-      }
-    }); 
+    socket.on("disconnect", function() {
+      connected = false;
+    });
   }
 
-  this.send = function (name, data) {
+  this.send = function (action, info) {
+    if (!connected) return;
     var obj = {
-      type: 'b',
-      name: name,      
-      data: data,
+      action: action,      
+      info: info,
     };
-    socket.emit('send', obj);
+    socket.emit('message', obj);
   }
 
   this.on = function (name, callback) {
@@ -148,11 +147,35 @@ var  Broadcaster = function() {
 var broadcaster = new Broadcaster();
 var vkPl = new vkPlayer();
 
+//* Init events 
+
+vkPl.on('play', function(info) {
+  console.log('Play event');
+  console.log(info);
+  broadcaster.send('play', info);
+});
+vkPl.on('pause', function(info) {
+  console.log('Pause event');
+  console.log(info);
+  broadcaster.send('pause', info);
+});
+vkPl.on('rewind', function(info) {
+  console.log('Rewind event');
+  console.log(info);
+  broadcaster.send('rewind', info);
+});
+vkPl.on('load', function(info) {
+  console.log('Load event');
+  console.log(info);
+  broadcaster.send('load', info);
+});
+
 //* Inject HTML Code  (Button)
 
 jQuery(document).ready(function() {
   var timer = setInterval(function() {
     if (typeof currentAudioId() !== "undefined") {
+
       clearTimeout(timer);
 
       vkPl.initHooks();
@@ -168,43 +191,17 @@ jQuery(document).ready(function() {
   }, 500);  
 });
 
-
 //* Button On/Off Radio
+
 function rBtnClick() {
   var rBtn = $('#radio');
-  if (rBtn.hasClass('ready')) {;
+  if (rBtn.hasClass('ready')) {
     rBtn.removeClass('ready').addClass('bcast');
-    StartBroadcast();
+    lStorage.set('radio_stream', 'on');
+    broadcaster.connect(vk.id);
   } else {
     rBtn.removeClass('bcast').addClass('ready');
-    StopBroadcast();
+    lStorage.set('radio_stream', 'off');
+    broadcaster.stop();
   }
-}
-
-function StartBroadcast() {
-
-  vkPl.onChangeSrc(function(src) {
-    broadcaster.send('change', src);
-  });
-  vkPl.onPause(function() {
-    broadcaster.send('pause');
-  });
-  vkPl.onPlay(function() {
-    broadcaster.send('play');
-  });      
-  vkPl.onRewind(function(pos) {
-    broadcaster.send('rewind', pos);
-  });            
-  broadcaster.on('get_status', function() {
-    broadcaster.send('status', vkPl.getStatus());
-  });
-
-  broadcaster.connect(vk.id);
-
-  lStorage.set('radio_stream', 'on');
-}
-
-function StopBroadcast() {
-  broadcaster.stop();
-  lStorage.set('radio_stream', 'off');
 }

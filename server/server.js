@@ -73,6 +73,12 @@ io.on('connection', function (socket) {
   });
 
   //* Transfer command message
+  socket.on('message', function (obj) {
+    console.log('Command: ' + obj.action);
+    console.log( 'Info: ' + JSON.stringify(obj.info));
+  });
+
+  //* Transfer command message
   socket.on('send', function (obj) {
     console.log('Command: ' + obj.name);
     if (obj.type == 'b') {
