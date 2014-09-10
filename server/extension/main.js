@@ -182,7 +182,7 @@ jQuery(document).ready(function() {
 
       var button = jQuery('<div id="radio" class="radio ready"></div>');
       button.click(rBtnClick);
-      //jQuery("body").append(button);
+      jQuery("body").append(button);
 
       if (lStorage.get('radio_stream') == 'on') {
         //rBtnClick();

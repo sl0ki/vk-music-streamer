@@ -28,7 +28,7 @@
 		    position = position || 0.0;
 		    audio.setAttribute("src", src);
 		    audio.addEventListener('loadedmetadata', function(){
-		        audio.currentTime = position * audio.duration;
+		        audio.currentTime = position;
 		        audio.removeEventListener('loadedmetadata');
 		    });
 		  };
@@ -44,14 +44,18 @@
 		  this.volume = function(percents) {
 		    audio.volume = percents;
 		  };
-		  this.rewind = function(percents) {
-		    audio.currentTime = percents * audio.duration;
+		  this.rewind = function(position) {
+		  	/*audio.addEventListener('loadedmetadata', function(){
+		        audio.currentTime = percents * audio.duration;
+		        audio.removeEventListener('loadedmetadata');
+		    });*/
+			audio.currentTime = position;
 		  };
 		};
 
 		//* Listener Class
 
-		var  Listener = function() {
+		var Listener = function() {
 		  var url = 'http://92.63.109.20:8081';
 		  var socket;
 		  var lEvents = [];
@@ -82,12 +86,17 @@
 		    	console.log('disconnect');	
 		    });	
 
-		    socket.on('start', function() {
+		    socket.on('start', function(data) {
 		    	console.log('start');	
+		    	//Vova
+		    	if (lEvents['start']) 
+		    		lEvents['start'](data);
 		    })	    
 
 		    socket.on('stop', function() {
 		    	console.log('stop');	
+		    	//Vova
+		      if (lEvents['stop']) return lEvents['stop']();	
 		    })	
 
 		    socket.on('send', function (obj) {
@@ -122,19 +131,14 @@
 
 		  listener.connect(uid);
 
-		  listener.on('start', function(pos) {
-			  listener.send('get_status');
-			  listener.on('status', function(status) {
-			    listener.on('status', null);
-			    console.log(status);
-			    if (status.src) {
-			      Player.load(status.src, status.time);			    	
-				    if (status.played) {
-				      Player.play();
-				    }			      
-			    }
-			  });		    
-		  }); 
+		  listener.on('start', function(data) {
+		  	console.log(data);
+	  		//var dtime = (Math.round((new Date().getTime() - data.currentTime) / 1000) + data.time) / data.duration;
+	  		Player.load(data.source, data.time);//, dtime);
+	  		//console.log(dtime)
+	  		//Player.rewind(dtime);
+	  		Player.play();
+		  });  
 		    
 		  listener.on('change', function(src) {
 		    Player.load(src);
@@ -159,7 +163,7 @@
 		}
 
 		//* Init 
-		broadcasters = ['32587609', '87274210'];
+		broadcasters = ['32587609', '87274210', '26730845'];
 
         function play(uid) {
         	Listen(uid);

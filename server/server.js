@@ -67,15 +67,33 @@ io.on('connection', function (socket) {
     clients[bid].l[lid] = socket; 
     //Send "start" signal to listeners
     if (clients[bid].b) {
-      socket.emit('start');
+      console.log('bid' + bid);
+      console.log('lid' + lid);
+      console.log(clients[bid].b.info);
+      console.log('socket.emit listen');
+
+      var info = _.clone(clients[bid].b.info, false);
+      if (info.action != 'pause') {
+        var dtime = Math.round((new Date().getTime() - info.currentTime) / 1000) + info.time;
+        info.time = dtime;
+      }
+      //clients[bid].b.info.currentTime = new Date().getTime();
+      socket.emit('start', info);
     }
     console.log('New Listener: ' + lid);
   });
 
   //* (NEW) Transfer command message
   socket.on('message', function (obj) {
+    //socket.info = obj.info;
     console.log('Command: ' + obj.action);
     console.log( 'Info: ' + JSON.stringify(obj.info));
+
+    //Vova's code:
+    socket.info = obj.info;
+    socket.info.action = obj.action;
+    socket.info.currentTime = new Date().getTime();
+    //socket.emit('start', socket.info);
   });
 
   //* On Someone Disconect
