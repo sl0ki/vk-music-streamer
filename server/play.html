@@ -76,22 +76,18 @@
 		    socket.on('connect', function () {
 		      socket.emit('listen', {'uid': uid, 'bid': bid});
 		      console.log('connect');	
-		      if (lEvents['connect']) return lEvents['connect']();		      
 		    });
 
 		    socket.on("disconnect", function() {
 		    	console.log('disconnect');	
-		    	if (lEvents['disconnect']) return lEvents['disconnect']();
 		    });	
 
 		    socket.on('start', function() {
 		    	console.log('start');	
-		      if (lEvents['start']) return lEvents['start']();	    	
 		    })	    
 
 		    socket.on('stop', function() {
 		    	console.log('stop');	
-		      if (lEvents['stop']) return lEvents['stop']();	    	
 		    })	
 
 		    socket.on('send', function (obj) {

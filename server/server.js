@@ -29,86 +29,78 @@ app.get('/broadcasters.js', function(req, res) {
 
 /********************/
 
-var broadcasters = [];
+var clients = {};
 
 /*** SocketIO Events Bus ***/
 
 io.on('connection', function (socket) {
 
-  //* On Broadcater connect
-  socket.on('broadcast', function(uid){
-    socket.uid = uid;
-    socket.type = 'b';
+  //function dump_
 
-    //* If broadcaster exist, disconect all clients (they try connect to new broadcasters)
-    if (broadcasters[uid]) {
-        broadcasters[uid].listeners.forEach(function(listener) {
-        listener.socket.disconnect();
-        delete broadcasters[uid].listeners;
-      });      
-    }
-    //* Init new broadcaster
-    broadcasters[uid] = { 
-      socket: socket,
-      listeners: [],
+  //* On Broadcater connect
+  socket.on('broadcast', function(bid) {
+    if (!clients[bid]) {
+      clients[bid] = { l: {} };
     };
-    socket.emit('start');
-    console.log('New Broadcaster: ' + uid);
+    socket.bid = bid; 
+    socket.type = 'b';
+    socket.info = {};
+    clients[bid].b = socket;
+    //Send "start" signal to listeners
+    _.forEach(clients[bid].l, function(l) {
+      l.emit('start');
+    });    
+    console.log('New Broadcaster: ' + bid);
   });
 
   //* On Listener connect
   socket.on('listen', function(data) {
-    if (!broadcasters[data.bid]) {
-      socket.disconnect();
-      return ;
-    }
-    socket.uid = data.uid;
-    socket.type = 'l';
-    broadcasters[data.bid].listeners[data.uid] = {
-      socket: socket
+    var bid = data.bid;
+    var lid = data.uid;
+
+    if (!clients[bid]) {
+      clients[bid] = { l: {} };
     };
-    //broadcasters[data.bid].socket.emit('get_status');
-    socket.emit('start');
-    console.log('New Listener: ' + data.uid);
+    socket.bid = bid; 
+    socket.lid = lid;
+    socket.type = 'l';    
+    clients[bid].l[lid] = socket; 
+    //Send "start" signal to listeners
+    if (clients[bid].b) {
+      socket.emit('start');
+    }
+    console.log('New Listener: ' + lid);
   });
 
-  //* Transfer command message
+  //* (NEW) Transfer command message
   socket.on('message', function (obj) {
     console.log('Command: ' + obj.action);
     console.log( 'Info: ' + JSON.stringify(obj.info));
   });
 
-  //* Transfer command message
-  socket.on('send', function (obj) {
-    console.log('Command: ' + obj.name);
-    if (obj.type == 'b') {
-      broadcasters[socket.uid].listeners.forEach(function (listner) {
-        listner.socket.emit('send', obj);
-        //* Update broadcaster player status
-      });      
-    }
-    if (obj.type == 'l') {
-      broadcasters.forEach(function (b) {
-        if (b.listeners[socket.uid]) {
-          b.socket.emit('send', obj);
-        }
-      })
-    }    
-  });
-
   //* On Someone Disconect
   socket.on('disconnect', function () {
-    console.log('Disconect - ' + socket.uid);
-    if (socket.type == 'b') {
-      //* If Broadcaster disconected, disconect all listeners
-      broadcasters[socket.uid].listeners.forEach(function(listener) {
-        listener.socket.disconnect();
-      });
-      // TODO delete user
-    }
     if (socket.type == 'l') {
-      // TODO Find and delete       
-    }    
+      var bid = socket.bid;
+      var lid = socket.lid;
+      delete clients[bid].l[lid];
+      console.log('Listener disconnect :' + lid);
+    }
+    if (socket.type == 'b') {
+      var bid = socket.bid;
+      delete clients[bid].b;
+
+      //Send "stop" signal to listeners
+      _.forEach(clients[bid].l, function(l) {
+        l.emit('stop');
+      });
+
+      console.log('Broadcaster disconnect :' + bid);
+    } 
+    if( !clients[bid].b && Object.keys(clients[bid].l).length == 0 ) {
+      delete clients[bid]; 
+      console.log('Remove peer :' + bid);
+    }
   });
   /*** SocketIO Events Bus ***/
 
