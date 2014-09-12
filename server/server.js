@@ -109,7 +109,7 @@ io.on('connection', function (socket) {
       console.log('Broadcaster disconnect :' + bid);
     } 
 
-    if((clients[bid].b === undefined) && (Object.keys(clients[bid].l).length === 0)) {
+    if (clients[bid]) if((clients[bid].b === undefined) && (Object.keys(clients[bid].l).length === 0)) {
       delete clients[bid]; 
       console.log('Remove peer :' + bid);
     }
