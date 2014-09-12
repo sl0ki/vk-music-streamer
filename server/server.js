@@ -69,7 +69,7 @@ io.on('connection', function (socket) {
     if (clients[bid].b) {
       var info = _.clone(clients[bid].b.info, false);
       if (info.action != 'pause') {
-        info.time = var dtime = Math.round((new Date().getTime() - info.currentTime) / 1000) + info.time;
+        info.time = Math.round((new Date().getTime() - info.currentTime) / 1000) + info.time;
       }
       socket.emit('start', info);
     }
@@ -80,10 +80,14 @@ io.on('connection', function (socket) {
   socket.on('message', function (obj) {
     console.log('Command: ' + obj.action);
     console.log( 'Info: ' + JSON.stringify(obj.info));
-
+    // Add info field
     socket.info = obj.info;
     socket.info.action = obj.action;
     socket.info.currentTime = new Date().getTime();
+    // Send To All Listeners
+    _.forEach(clients[socket.bid].l, function(l) {
+      l.emit('message', obj);
+    });    
   });
 
   //* On Someone Disconect
@@ -94,7 +98,7 @@ io.on('connection', function (socket) {
       delete clients[bid].l[lid];
       console.log('Listener disconnect :' + lid);
     }
-    
+
     if (socket.type == 'b') {
       var bid = socket.bid;
       delete clients[bid].b;
@@ -105,12 +109,12 @@ io.on('connection', function (socket) {
       console.log('Broadcaster disconnect :' + bid);
     } 
 
-    if( !clients[bid].b && Object.keys(clients[bid].l).length == 0 ) {
+    if((clients[bid].b === undefined) && (Object.keys(clients[bid].l).length === 0)) {
       delete clients[bid]; 
       console.log('Remove peer :' + bid);
     }
   });
-  /*** SocketIO Events Bus ***/
+  /*** End SocketIO Events Bus ***/
 
 });
 

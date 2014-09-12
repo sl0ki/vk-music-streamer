@@ -5,7 +5,7 @@
 	<title>Document</title>
 	<script src="http://code.jquery.com/jquery-1.8.3.js" type="text/javascript"></script>
 	<!-- <script src="http://127.0.0.1:8081/broadcasters.js" type="text/javascript"></script> -->
-	<script src="http://92.63.109.20:8081/socket.io/socket.io.js" type="text/javascript"></script>	
+	<script src="http://radi0.me/socket.io/socket.io.js" type="text/javascript"></script>	
 	<!-- 
 	<script src="main.js" type="text/javascript"></script>	
 	<link rel="stylesheet" type="text/css" href="main.css"> -->
@@ -32,6 +32,7 @@
 		        audio.removeEventListener('loadedmetadata');
 		    });
 		  };
+
 		  this.play = function(src) {
 		    audio.play();
 		  };
@@ -45,11 +46,7 @@
 		    audio.volume = percents;
 		  };
 		  this.rewind = function(position) {
-		  	/*audio.addEventListener('loadedmetadata', function(){
-		        audio.currentTime = percents * audio.duration;
-		        audio.removeEventListener('loadedmetadata');
-		    });*/
-			audio.currentTime = position;
+				audio.currentTime = position;
 		  };
 		};
 
@@ -58,13 +55,14 @@
 		var Listener = function() {
 		  var url = 'http://92.63.109.20:8081';
 		  var socket;
-		  var lEvents = [];
+		  var events = [];
+		  var uid = Math.round(Math.random() * 1000000);
 
 		  var closeSocket = function() {
 		    if (socket) {
 		      oldSocket = socket;
-		      delete socket;
 		      oldSocket.disconnect();
+		      delete socket;
 		    }    
 		  };
 
@@ -74,100 +72,89 @@
 
 		  this.connect = function (bid) {
 		    closeSocket();
-		    var uid = Math.round(Math.random() * 1000000);
 		    socket = io.connect(url, {'forceNew': true });
 
 		    socket.on('connect', function () {
 		      socket.emit('listen', {'uid': uid, 'bid': bid});
 		      console.log('connect');	
+		      if (events['connect']) return events['connect']();
 		    });
 
 		    socket.on("disconnect", function() {
 		    	console.log('disconnect');	
+		    	if (events['disconnect']) return events['disconnect']();
 		    });	
 
 		    socket.on('start', function(data) {
 		    	console.log('start');	
-		    	//Vova
-		    	if (lEvents['start']) 
-		    		lEvents['start'](data);
+		    	console.log(data);
+		    	if (events['start']) return events['start'](data);
 		    })	    
 
 		    socket.on('stop', function() {
 		    	console.log('stop');	
-		    	//Vova
-		      if (lEvents['stop']) return lEvents['stop']();	
+		      if (events['stop']) return events['stop']();	
 		    })	
 
-		    socket.on('send', function (obj) {
-		      if (lEvents[obj.name]) {
-		        lEvents[obj.name](obj.data);
-		      }
+		    socket.on('message', function (res) {
+		    	console.log(res);
+		      if (events[res.action]) return events[res.action](res.info); 
 		    }); 
 		  };
 
-		  this.send = function (name, data) {
-		    var obj = {
-		      type: 'l',
-		      name: name,      
-		      data: data,
-		    };
-		    socket.emit('send', obj);
-		  }
-
 		  this.on = function (name, callback) {
-		    lEvents[name] = callback;
+		    events[name] = callback;
 		  }
-
-		  var that = this;
 		}
 
 		/******************************************/
 
 		var listener = new Listener();
-		var Player = new html5Player();
+		var player = new html5Player();
 
 		function Listen(uid) {
 
 		  listener.connect(uid);
 
-		  listener.on('start', function(data) {
-		  	console.log(data);
-	  		//var dtime = (Math.round((new Date().getTime() - data.currentTime) / 1000) + data.time) / data.duration;
-	  		Player.load(data.source, data.time);//, dtime);
-	  		//console.log(dtime)
-	  		//Player.rewind(dtime);
-	  		Player.play();
+		  listener.on('start', function(info) {
+	  		player.load(info.source, info.time);
+	  		if (info.played) {
+		    	player.play();
+		    }
 		  });  
 		    
-		  listener.on('change', function(src) {
-		    Player.load(src);
-		    Player.play();
+		  listener.on('load', function(info) {
+		    player.load(info.source);
+		    player.play();
 		  });
 		    
 		  listener.on('play', function() {
-		    Player.play();
+		    player.play();
 		  });
 
 		  listener.on('pause', function() {
-		    Player.pause();
+		    player.pause();
 		  });
 
-		  listener.on('rewind', function(pos) {
-		    Player.rewind(pos);
+		  listener.on('rewind', function(info) {
+		    player.rewind(info.time);
 		  });     
 
-		  listener.on('disconnect', function(pos) {
-		    Player.pause();
+		  listener.on('stop', function(pos) {
+		    player.pause();
 		  }); 		  
+
+		  listener.on('disconnect', function(pos) {
+		    player.pause();
+		  });		  
 		}
 
 		//* Init 
 		broadcasters = ['32587609', '87274210', '26730845'];
 
-        function play(uid) {
-        	Listen(uid);
-        }
+    function play(uid) {
+    	Listen(uid);
+    }
 
 		$(document).ready(function() {          
 		    $.each(broadcasters, function(key, val) {

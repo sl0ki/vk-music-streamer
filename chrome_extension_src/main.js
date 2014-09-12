@@ -16,7 +16,7 @@ var injectCssFile = function(filename) {
 	oHead.appendChild(oLink);
 };
 
-var host = 'http://92.63.109.20:8081';
+var host = 'http://radi0.me';
 
 injectCssFile(host + '/extension/main.css');
 
