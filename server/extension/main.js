@@ -97,7 +97,7 @@ vkPlayer = function() {
 
 var  Broadcaster = function() {
 
-  var url = 'http://92.63.109.20:8081';
+  var url = 'http://radi0.me';
   var socket;
   var bEvents = [];
   var connected = false;
