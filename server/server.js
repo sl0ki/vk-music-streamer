@@ -67,17 +67,10 @@ io.on('connection', function (socket) {
     clients[bid].l[lid] = socket; 
     //Send "start" signal to listeners
     if (clients[bid].b) {
-      console.log('bid' + bid);
-      console.log('lid' + lid);
-      console.log(clients[bid].b.info);
-      console.log('socket.emit listen');
-
       var info = _.clone(clients[bid].b.info, false);
       if (info.action != 'pause') {
-        var dtime = Math.round((new Date().getTime() - info.currentTime) / 1000) + info.time;
-        info.time = dtime;
+        info.time = var dtime = Math.round((new Date().getTime() - info.currentTime) / 1000) + info.time;
       }
-      //clients[bid].b.info.currentTime = new Date().getTime();
       socket.emit('start', info);
     }
     console.log('New Listener: ' + lid);
@@ -85,15 +78,12 @@ io.on('connection', function (socket) {
 
   //* (NEW) Transfer command message
   socket.on('message', function (obj) {
-    //socket.info = obj.info;
     console.log('Command: ' + obj.action);
     console.log( 'Info: ' + JSON.stringify(obj.info));
 
-    //Vova's code:
     socket.info = obj.info;
     socket.info.action = obj.action;
     socket.info.currentTime = new Date().getTime();
-    //socket.emit('start', socket.info);
   });
 
   //* On Someone Disconect
@@ -104,17 +94,17 @@ io.on('connection', function (socket) {
       delete clients[bid].l[lid];
       console.log('Listener disconnect :' + lid);
     }
+    
     if (socket.type == 'b') {
       var bid = socket.bid;
       delete clients[bid].b;
-
       //Send "stop" signal to listeners
       _.forEach(clients[bid].l, function(l) {
         l.emit('stop');
       });
-
       console.log('Broadcaster disconnect :' + bid);
     } 
+
     if( !clients[bid].b && Object.keys(clients[bid].l).length == 0 ) {
       delete clients[bid]; 
       console.log('Remove peer :' + bid);
