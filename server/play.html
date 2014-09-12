@@ -117,6 +117,7 @@
 		  listener.connect(uid);
 
 		  listener.on('start', function(info) {
+		  	if (!info) return;
 	  		player.load(info.source, info.time);
 	  		if (info.played) {
 		    	player.play();
