@@ -41,7 +41,11 @@ io.on('connection', function (socket) {
   socket.on('broadcast', function(bid) {
     if (!clients[bid]) {
       clients[bid] = { l: {} };
-    };
+    } else if (clients[bid].b) {
+      socket.disconnect();
+      // clients[bid].b.bid = null;
+      // clients[bid].b.disconnect();
+    }
     socket.bid = bid; 
     socket.type = 'b';
     socket.info = {};
@@ -60,7 +64,8 @@ io.on('connection', function (socket) {
 
     if (!clients[bid]) {
       clients[bid] = { l: {} };
-    };
+    } else if (clients[bid].l[lid]) return socket.disconnect();
+
     socket.bid = bid; 
     socket.lid = lid;
     socket.type = 'l';    
@@ -92,6 +97,7 @@ io.on('connection', function (socket) {
 
   //* On Someone Disconect
   socket.on('disconnect', function () {
+    if(!socket.bid) return;
     var bid = socket.bid;
 
     if (socket.type == 'l') {
@@ -113,8 +119,6 @@ io.on('connection', function (socket) {
       delete clients[bid]; 
       console.log('Remove peer :' + bid);
     }
-    // Delete Socket 
-    delete socket.namespace.sockets[socket.id];
   });
   /*** End SocketIO Events Bus ***/
 
