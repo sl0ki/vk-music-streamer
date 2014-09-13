@@ -79,7 +79,7 @@ io.on('connection', function (socket) {
   //* (NEW) Transfer command message
   socket.on('message', function (obj) {
     console.log('Command: ' + obj.action);
-    console.log( 'Info: ' + JSON.stringify(obj.info));
+    //console.log( 'Info: ' + JSON.stringify(obj.info));
     // Add info field
     socket.info = obj.info;
     socket.info.action = obj.action;
@@ -92,15 +92,15 @@ io.on('connection', function (socket) {
 
   //* On Someone Disconect
   socket.on('disconnect', function () {
+    var bid = socket.bid;
+
     if (socket.type == 'l') {
-      var bid = socket.bid;
       var lid = socket.lid;
       delete clients[bid].l[lid];
       console.log('Listener disconnect :' + lid);
     }
 
     if (socket.type == 'b') {
-      var bid = socket.bid;
       delete clients[bid].b;
       //Send "stop" signal to listeners
       _.forEach(clients[bid].l, function(l) {
@@ -109,10 +109,12 @@ io.on('connection', function (socket) {
       console.log('Broadcaster disconnect :' + bid);
     } 
 
-    if (clients[bid]) if((clients[bid].b === undefined) && (Object.keys(clients[bid].l).length === 0)) {
+    if((clients[bid].b === undefined) && (Object.keys(clients[bid].l).length === 0)) {
       delete clients[bid]; 
       console.log('Remove peer :' + bid);
     }
+    // Delete Socket 
+    delete socket.namespace.sockets[socket.id];
   });
   /*** End SocketIO Events Bus ***/
 
