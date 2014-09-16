@@ -130,6 +130,10 @@ var  Broadcaster = function() {
     });
   }
 
+  this.isConnected = function() {
+    return connected;
+  }
+
   this.send = function (action, info) {
     if (!connected) return;
     var obj = {
@@ -151,8 +155,6 @@ var vkPl = new vkPlayer();
 
 //* Init events 
 
-var connected = false;
-
 vkPl.on('play', function(info) {
   console.log('Play event');
   //console.log(info);
@@ -172,8 +174,7 @@ vkPl.on('rewind', function(info) {
 vkPl.on('load', function(info) {
   console.log('Load event');
   console.log(info);
-  if (!connected) {
-    connected = true;
+  if (!broadcaster.isConnected()) {
     broadcaster.connect(vk.id);
     broadcaster.on('connect', function() {
       broadcaster.send('load', info);
