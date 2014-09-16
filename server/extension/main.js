@@ -121,10 +121,12 @@ var  Broadcaster = function() {
     socket.on('connect', function () { 
       connected = true;
       socket.emit('broadcast', uid); 
+      if (bEvents['connect']) return bEvents['connect']();
     });
 
     socket.on("disconnect", function() {
       connected = false;
+      if (bEvents['disconnect']) return bEvents['disconnect']();
     });
   }
 
@@ -149,25 +151,36 @@ var vkPl = new vkPlayer();
 
 //* Init events 
 
+var connected = false;
+
 vkPl.on('play', function(info) {
   console.log('Play event');
-  console.log(info);
+  //console.log(info);
   broadcaster.send('play', info);
 });
 vkPl.on('pause', function(info) {
   console.log('Pause event');
-  console.log(info);
+  //console.log(info);
   broadcaster.send('pause', info);
 });
 vkPl.on('rewind', function(info) {
   console.log('Rewind event');
-  console.log(info);
+  //console.log(info);
   broadcaster.send('rewind', info);
 });
+
 vkPl.on('load', function(info) {
   console.log('Load event');
   console.log(info);
-  broadcaster.send('load', info);
+  if (!connected) {
+    connected = true;
+    broadcaster.connect(vk.id);
+    broadcaster.on('connect', function() {
+      broadcaster.send('load', info);
+    });
+  } else {
+    broadcaster.send('load', info);
+  }
 });
 
 //* Inject HTML Code  (Button)
@@ -175,34 +188,23 @@ vkPl.on('load', function(info) {
 jQuery(document).ready(function() {
   var timer = setInterval(function() {
     if (typeof currentAudioId() !== "undefined") {
-
       clearTimeout(timer);
-
       vkPl.initHooks();
-
-      var button = jQuery('<div id="radio" class="radio ready"></div>');
-      button.click(rBtnClick);
-      jQuery("body").append(button);
-
-      if (lStorage.get('radio_stream') == 'on') {
-        //rBtnClick();
-        broadcaster.connect(vk.id);
-      }
-  	}  
+  	};
   }, 500);  
 });
 
 //* Button On/Off Radio
 
-function rBtnClick() {
-  var rBtn = $('#radio');
-  if (rBtn.hasClass('ready')) {
-    rBtn.removeClass('ready').addClass('bcast');
-    lStorage.set('radio_stream', 'on');
-    broadcaster.connect(vk.id);
-  } else {
-    rBtn.removeClass('bcast').addClass('ready');
-    lStorage.set('radio_stream', 'off');
-    broadcaster.stop();
-  }
-}
+// function rBtnClick() {
+//   var rBtn = $('#radio');
+//   if (rBtn.hasClass('ready')) {
+//     rBtn.removeClass('ready').addClass('bcast');
+//     lStorage.set('radio_stream', 'on');
+//     broadcaster.connect(vk.id);
+//   } else {
+//     rBtn.removeClass('bcast').addClass('ready');
+//     lStorage.set('radio_stream', 'off');
+//     broadcaster.stop();
+//   }
+// }
