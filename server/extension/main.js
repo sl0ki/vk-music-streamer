@@ -62,6 +62,7 @@ vkPlayer = function() {
   };
 
   this.on = function(name, callback) {
+    if (callback === undefined) return events[name];
     events[name] = callback;
   };
 
@@ -144,6 +145,7 @@ var  Broadcaster = function() {
   }
 
   this.on = function (name, callback) {
+    if (callback === undefined) return bEvents[name];
     bEvents[name] = callback;
   }  
 }
@@ -155,33 +157,44 @@ var vkPl = new vkPlayer();
 
 //* Init events 
 
-vkPl.on('play', function(info) {
-  console.log('Play event');
-  //console.log(info);
-  broadcaster.send('play', info);
-});
-vkPl.on('pause', function(info) {
-  console.log('Pause event');
-  //console.log(info);
-  broadcaster.send('pause', info);
-});
-vkPl.on('rewind', function(info) {
-  console.log('Rewind event');
-  //console.log(info);
-  broadcaster.send('rewind', info);
-});
+var sendAfterConnect = function(info) {
+  if ((broadcaster).on('connect')) return;
+
+  broadcaster.connect(vk.id);
+  broadcaster.on('connect', function() {
+    broadcaster.on('connect', null);
+    console.log('info send');
+    broadcaster.send('load', info);
+  });  
+}
 
 vkPl.on('load', function(info) {
   console.log('Load event');
   console.log(info);
   if (!broadcaster.isConnected()) {
-    broadcaster.connect(vk.id);
-    broadcaster.on('connect', function() {
-      broadcaster.send('load', info);
-    });
+    sendAfterConnect(info);
   } else {
     broadcaster.send('load', info);
   }
+});
+
+vkPl.on('play', function(info) {
+  console.log('Play event');
+  if (!broadcaster.isConnected()) {
+    sendAfterConnect(info);
+  } else {
+    broadcaster.send('play', info);
+  }
+});
+
+vkPl.on('pause', function(info) {
+  console.log('Pause event');
+  broadcaster.send('pause', info);
+});
+
+vkPl.on('rewind', function(info) {
+  console.log('Rewind event');
+  broadcaster.send('rewind', info);
 });
 
 //* Inject HTML Code  (Button)
@@ -194,18 +207,3 @@ jQuery(document).ready(function() {
   	};
   }, 500);  
 });
-
-//* Button On/Off Radio
-
-// function rBtnClick() {
-//   var rBtn = $('#radio');
-//   if (rBtn.hasClass('ready')) {
-//     rBtn.removeClass('ready').addClass('bcast');
-//     lStorage.set('radio_stream', 'on');
-//     broadcaster.connect(vk.id);
-//   } else {
-//     rBtn.removeClass('bcast').addClass('ready');
-//     lStorage.set('radio_stream', 'off');
-//     broadcaster.stop();
-//   }
-// }
