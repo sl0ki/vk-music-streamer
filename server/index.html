@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Vk Music Streamer</title>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/knockout/3.2.0/knockout-min.js" type="text/javascript"></script>	
+	<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.11/d3.min.js" type="text/javascript"></script>	
+	<script src="//cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js" type="text/javascript"></script>	
+	<script src="//cdnjs.cloudflare.com/ajax/libs/knockout.mapping/2.4.1/knockout.mapping.js" type="text/javascript"></script>	
+	<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.min.css">
+	<script src="js/main.js" type="text/javascript"></script>	
+	<link rel="stylesheet" type="text/css" href="css/main.css">
+</head>
+<body onload="init();">
+<br/>
+
+	<div class="shadow" data-bind="css: {active: shadow()}"></div>
+	<div class="bc-wrap" data-bind="foreach: bc" >
+		<div class="flip-container" data-bind="css: {active: played()}, style: {width: size() + 'px', height: size() + 'px', 'font-size': size() + 'px'}" ontouchstart="this.classList.toggle('hover');" >
+			<div class="flipper">
+				<div class="front">
+		            <img class="photo" data-bind="attr:{src: photo}"/>
+				</div>
+				<div class="back">
+		            <div class="marquee"><span data-bind="text: listen"></span></div>
+		            <div class="player play" data-bind="click: $parent.play, visible: !played()">
+		                <i class="btn fa fa-play"></i>
+		            </div>
+		            <div class="player pause" data-bind="click: $parent.pause, visible: played()">
+		                <i class="btn fa fa-pause"></i>
+		            </div>            
+		            <div class="listeners">
+		                 <i class="btn fa fa-headphones"></i> <span data-bind="text: listeners"></span>
+		            </div>
+				</div>
+			</div>
+		</div>			
+	</div>
+
+</body>
+</html>
