@@ -10,9 +10,10 @@ var io = require("socket.io")(server);
 //* Get Broadcasters list 
 app.get('/broadcasters.js', function(req, res) {
   var arr = [];
-  for (key in broadcasters) {
-    arr.push(key);    
-  }
+  // for (key in broadcasters) {
+  //   arr.push(key);    
+  // }
+  arr = ['32587609', '87274210', '26730845', '28548097'];
   vk = new vkApi();
   var params = {
     user_ids: arr.join(','),
