@@ -7,7 +7,7 @@
 
   "permissions": [
     "tabs", 
-    "https://vk.com/"
+    "*://vk.com/"
   ],
   "content_scripts": [
     {
