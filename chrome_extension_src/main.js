@@ -16,12 +16,8 @@ var injectCssFile = function(filename) {
 	oHead.appendChild(oLink);
 };
 
-var host = 'http://radi0.me';
+injectScript('//rawgit.com/sl0ki/vk-music-streamer/master/server/extension/socket.io.js');
+injectScript('//rawgit.com/sl0ki/vk-music-streamer/master/server/extension/broadcaster.js');
+injectCssFile('//rawgit.com/sl0ki/vk-music-streamer/master/server/extension/broadcaster.css');
 
-injectCssFile(host + '/extension/main.css');
-
-injectScript(host + '/extension/jquery-1.11.1.min.js', function() {
-	injectScript(host + '/socket.io/socket.io.js');
-	injectScript(host + '/extension/main.js');
-});
 

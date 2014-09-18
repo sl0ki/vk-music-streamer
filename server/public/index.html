@@ -2,19 +2,19 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Vk Music Streamer</title>
+	<title>radi0.me | vk.com music streamer</title>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/knockout/3.2.0/knockout-min.js" type="text/javascript"></script>	
 	<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.11/d3.min.js" type="text/javascript"></script>	
 	<script src="//cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js" type="text/javascript"></script>	
 	<script src="//cdnjs.cloudflare.com/ajax/libs/knockout.mapping/2.4.1/knockout.mapping.js" type="text/javascript"></script>	
 	<script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js" type="text/javascript"></script>	
-	<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.min.css">
 	<script src="js/main.js" type="text/javascript"></script>	
+	<script src="/socket.io/socket.io.js" type="text/javascript"></script>	
+	<script src="/broadcasters.js" type="text/javascript"></script>
 	<link rel="stylesheet" type="text/css" href="css/main.css">
+	<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.min.css">	
 </head>
 <body onload="init();">
-<br/>
-
 	<div class="shadow" data-bind="css: {active: shadow()}"></div>
 	<div class="b-wrap" data-bind="style: {width: wrapSize() + 'px', height: wrapSize() + 'px'}">
 		<div data-bind="foreach: bc" >

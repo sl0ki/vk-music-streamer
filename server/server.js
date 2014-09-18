@@ -3,17 +3,25 @@ var _ = require('lodash');
 var vkApi = require('./vkApi');
 
 var app = express();
-app.use(express.static(__dirname + '/'));
+app.use('/', express.static(__dirname + '/public/'));
 var server = app.listen(8081);
 var io = require("socket.io")(server);
 
 //* Get Broadcasters list 
 app.get('/broadcasters.js', function(req, res) {
+  var response = function(array) {
+    var string = JSON.stringify(array);
+    string =  'var broadcasters = '+ string;
+    res.send(string);
+  };
+
   var arr = [];
-  // for (key in broadcasters) {
-  //   arr.push(key);    
-  // }
-  arr = ['32587609', '87274210', '26730845', '28548097'];
+  for (client in clients) {
+    arr.push(client);    
+  }
+  if (!arr.length) return response([]);
+
+  // arr = ['32587609', '87274210', '26730845', '28548097'];
   vk = new vkApi();
   var params = {
     user_ids: arr.join(','),
@@ -21,7 +29,19 @@ app.get('/broadcasters.js', function(req, res) {
   };
   vk.request('users.get', params, function(err, data) {
     if(!err) {
-      res.send(data);
+      var result = [];
+      for(key in data) {
+        var obj = {};
+        obj.id = data[key].id;
+        var peer = clients[obj.id];
+        if (!peer) continue;
+        if (!peer.b) continue;
+        obj.photo = data[key].photo_200;
+        obj.listeners = Object.keys(peer.l).length;
+        obj.listen = peer.b.info.name + ' - ' + peer.b.info.artist;
+        result.push(obj);
+      }
+      response(result);
     } else {
       res.send(500, 'VK API ERROR!');
     }
