@@ -132,7 +132,7 @@ html5Player = function() {
 //* Listener Class
 
 var Listener = function() {
-  var url = 'http://radi0.me';
+  var url = '//radi0.me';
   var socket;
   var events = [];
   var uid = Math.round(Math.random() * 1000000);
